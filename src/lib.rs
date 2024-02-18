@@ -2,9 +2,8 @@ use std::{
     collections::HashMap,
     default::Default,
     sync::{Arc, Mutex},
-    thread,
     thread::sleep,
-    time::{Duration, Instant},
+    time::Duration,
 };
 
 use heapless;
@@ -13,11 +12,11 @@ use uuid::Uuid;
 use embedded_svc::{
     http::server::{Request},
     http::Method,
-    io::{Error, Write},
+    io::Write,
 };
 pub use esp_idf_hal::ledc::{config::TimerConfig, LedcDriver, LedcTimerDriver};
 pub use esp_idf_hal::units::FromValueType;
-use esp_idf_hal::{delay::Delay, gpio::*, peripherals::Peripherals, units::Hertz, modem::Modem};
+use esp_idf_hal::{delay::Delay, peripherals::Peripherals, units::Hertz, modem::Modem};
 use esp_idf_svc::{
     eventloop::EspSystemEventLoop,
     io::EspIOError,
@@ -29,7 +28,7 @@ use esp_idf_svc::http::server::Configuration as SVC_Configuration;
 //pub use esp_idf_hal::ledc::{config::LedcDriver, LedcTimerDriver, TimerConfig};
 
 pub use device;
-use device::{Action, Device, DeviceType};
+use device::{Action, Device};
 
 pub mod encoder;
 //pub mod wrappers;
