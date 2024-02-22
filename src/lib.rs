@@ -28,9 +28,11 @@ use esp_idf_svc::http::server::Configuration as SVC_Configuration;
 //pub use esp_idf_hal::ledc::{config::LedcDriver, LedcTimerDriver, TimerConfig};
 
 pub use device;
-use device::{Action, Device};
+use device::{Action, Device, Devices};
 
 pub mod encoder;
+pub mod updaters;
+use updaters::{ EncoderDevices, };
 //pub mod wrappers;
 //pub use encoder::{update_slider_type_device_from_encoder, Encoder, EncoderPeripheralData};
 
@@ -61,7 +63,7 @@ impl Node {
     }
 
     //#[cfg(all(not(feature = "riscv-ulp-hal"), any(esp32, esp32s2, esp32s3)))]
-    pub fn run(&mut self, devices: Arc<Mutex<Vec<Device>>>, modem: Modem) {
+    pub fn run(&mut self, devices: Devices, modem: Modem) {
         let sys_loop = EspSystemEventLoop::take().unwrap();
         let nvs =  EspDefaultNvsPartition::take().unwrap();
         let mut wifi_driver =
@@ -91,7 +93,7 @@ impl Node {
         })
         .unwrap();
         */
-        let devices_clone = Arc::clone(&devices);
+        let devices_clone = devices.clone();
         server
             .fn_handler("/status", Method::Get, move |request| {
                 if &request.uri().len() < &8_usize {
@@ -104,7 +106,7 @@ impl Node {
                 if query.get("device").is_some() {
                     let d = query.get("device").unwrap();
                     let d = d.replace("%20", " ");
-                    for device in devices_clone.lock().unwrap().iter() {
+                    for device in devices_clone.devices.lock().unwrap().iter() {
                         if device.name == d {
                             let mut response = request.into_ok_response()?;
                             let _ = response.write_all(&device.to_json().into_bytes()[..]);
@@ -116,7 +118,7 @@ impl Node {
                     return Ok(());
                 } else if query.get("uuid").is_some() {
                     let u = query.get("uuid").unwrap();
-                    for device in devices_clone.lock().unwrap().iter() {
+                    for device in devices_clone.devices.lock().unwrap().iter() {
                         if &device.uuid.to_string().as_str() == u {
                             let mut response = request.into_ok_response()?;
                             let _ = response.write_all(&device.to_json().into_bytes()[..]);
@@ -134,12 +136,12 @@ impl Node {
                 }
             })
             .unwrap();
-        let devices_clone = Arc::clone(&devices);
+        let devices_clone = devices.clone();
         server
             .fn_handler("/devices", Method::Get, move |request| {
                 let mut devices = HashMap::new();
                 {
-                    for device in devices_clone.lock().unwrap().iter() {
+                    for device in devices_clone.devices.lock().unwrap().iter() {
                         devices.insert(device.name.clone(), device.clone());
                     }
                 }
@@ -150,7 +152,7 @@ impl Node {
                 return Ok::<(), EspIOError>(());
             })
             .unwrap();
-        let devices_clone = Arc::clone(&devices);
+        let devices_clone = devices.clone();
         server
             .fn_handler("/command", Method::Get, move |request| {
                 if &request.uri().len() < &9_usize {
@@ -199,7 +201,7 @@ impl Node {
                 match query.get("uuid") {
                     Some(u) => match Uuid::parse_str(u) {
                         Ok(uuid) => {
-                            for device in devices_clone.lock().unwrap().iter_mut() {
+                            for device in devices_clone.devices.lock().unwrap().iter_mut() {
                                 if uuid == device.uuid {
                                     let _ = device.take_action(action);
                                     let mut response = request.into_ok_response()?;
@@ -237,8 +239,9 @@ impl Node {
     }
 }
 
-pub fn get_frequencies(devices: &Arc<Mutex<Vec<Device>>>) -> Vec<Hertz> {
+pub fn get_frequencies(devices: &Devices) -> Vec<Hertz> {
     devices
+        .devices
         .lock()
         .unwrap()
         .iter()
@@ -255,7 +258,7 @@ pub fn get_max_duty_cycles(drivers: &Vec<LedcDriver>) -> Vec<u32> {
 }
 
 pub fn update_device_duty_cycles(
-    devices: Arc<Mutex<Vec<Device>>>,
+    devices: Devices,
     mut drivers: Vec<LedcDriver>,
     max_duty_cycles: Vec<u32>,
     delay_ms: u32,
@@ -264,6 +267,7 @@ pub fn update_device_duty_cycles(
     loop {
         {
             for ((device, driver), max_duty) in devices
+                .devices
                 .lock()
                 .unwrap()
                 .iter_mut()

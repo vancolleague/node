@@ -12,7 +12,7 @@ pub use esp_idf_hal::peripheral::Peripheral;
 pub use esp_idf_svc::hal::ledc::LedcDriver;
 use esp_idf_sys::EspError;
 
-use device::{Action, Device};
+use device::{Action, Device, Devices};
 
 const LOW_LIMIT: i16 = -100;
 const HIGH_LIMIT: i16 = 100;
@@ -98,53 +98,3 @@ impl<'d> Encoder<'d> {
     }
 }
 
-pub fn update_slider_type_devices(
-    mut encoders: Vec<Encoder>,
-    devices: Arc<Mutex<Vec<Device>>>,
-    delay_ms: u32,
-) {
-    let mut last_encoder_values = Vec::from([0i32, 0i32]);
-    let mut last_encoder_times = Vec::from([Instant::now(), Instant::now()]);
-    let delay = Delay::new(delay_ms);
-    loop {
-        {
-            let mut devices_guard = devices.lock().unwrap();
-            for (((device, encoder), last_encoder_time), last_encoder_value) in devices_guard
-                .iter_mut()
-                .zip(encoders.iter_mut())
-                .zip(last_encoder_times.iter_mut())
-                .zip(last_encoder_values.iter_mut())
-            {
-                update_device(device, encoder, last_encoder_time, last_encoder_value);
-            }
-        }
-        //Delay::delay_ms(100u32);
-        Delay::delay_ms(&delay, delay_ms);
-    }
-}
-
-fn update_device(
-    device: &mut Device,
-    encoder: &mut Encoder,
-    last_encoder_time: &mut Instant,
-    last_encoder_value: &mut i32,
-) {
-    let encoder_value = encoder.get_value().unwrap();
-    if encoder_value != *last_encoder_value {
-        let current_time = Instant::now();
-        let time_since_last_check = current_time.duration_since(*last_encoder_time);
-        if time_since_last_check > Duration::from_millis(100) {
-            {
-                if encoder_value > *last_encoder_value {
-                    let _ = device.take_action(Action::Up { amount: None });
-                    device.updated = true;
-                } else {
-                    let _ = device.take_action(Action::Down { amount: None });
-                    device.updated = true;
-                }
-            }
-            *last_encoder_time = Instant::now();
-        }
-        *last_encoder_value = encoder_value;
-    }
-}
