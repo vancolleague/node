@@ -17,21 +17,27 @@ impl EncoderDevices for Devices {
         let mut last_encoder_times = vec![Instant::now(); length];
         let delay = Delay::new(delay_ms);
         loop {
-            let mut devices_guard = self.devices.lock().unwrap(); 
+            let mut devices_guard = self.devices.lock().unwrap();
             for (((device, encoder), last_encoder_time), last_encoder_value) in devices_guard
                 .iter_mut()
                 .zip(encoders.iter_mut())
                 .zip(last_encoder_times.iter_mut())
                 .zip(last_encoder_values.iter_mut())
             {
-                update_device(device, encoder, last_encoder_time, last_encoder_value, delay_ms.into());
+                update_device_from_encoder(
+                    device,
+                    encoder,
+                    last_encoder_time,
+                    last_encoder_value,
+                    delay_ms.into(),
+                );
             }
         }
         Delay::delay_ms(&delay, delay_ms);
     }
 }
 
-fn update_device(
+fn update_device_from_encoder(
     device: &mut Device,
     encoder: &mut Encoder,
     last_encoder_time: &mut Instant,
@@ -46,10 +52,8 @@ fn update_device(
             {
                 if encoder_value > *last_encoder_value {
                     let _ = device.take_action(Action::Up(None));
-                    device.updated = true;
                 } else {
                     let _ = device.take_action(Action::Down(None));
-                    device.updated = true;
                 }
             }
             *last_encoder_time = Instant::now();

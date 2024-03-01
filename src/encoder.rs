@@ -97,4 +97,3 @@ impl<'d> Encoder<'d> {
         Ok(value)
     }
 }
-
