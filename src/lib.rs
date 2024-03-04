@@ -11,7 +11,9 @@ use uuid::Uuid;
 
 pub use embedded_svc::http::Method;
 use embedded_svc::{http::server::Request, io::Write};
+pub use esp_idf_hal::gpio::{AnyInputPin, InputPin, PinDriver};
 pub use esp_idf_hal::ledc::{config::TimerConfig, LedcDriver, LedcTimerDriver};
+pub use esp_idf_hal::pcnt::Pcnt;
 pub use esp_idf_hal::units::FromValueType;
 use esp_idf_hal::{delay::Delay, modem::Modem, peripherals::Peripherals, units::Hertz};
 use esp_idf_svc::http::server::Configuration as SVC_Configuration;
@@ -34,7 +36,6 @@ use updaters::EncoderDevices;
 //pub use encoder::{update_slider_type_device_from_encoder, Encoder, EncoderPeripheralData};
 
 pub struct Node {
-    //pub devices: Arc<Mutex<Vec<Device>>>,
     pub ssid: String,
     pub password: String,
 }

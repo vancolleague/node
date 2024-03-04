@@ -7,6 +7,7 @@ use std::time::{Duration, Instant};
 use esp_idf_hal::delay::Delay;
 use esp_idf_hal::gpio::AnyInputPin;
 pub use esp_idf_hal::gpio::InputPin;
+pub use esp_idf_hal::pcnt::Pcnt;
 use esp_idf_hal::pcnt::*;
 pub use esp_idf_hal::peripheral::Peripheral;
 pub use esp_idf_svc::hal::ledc::LedcDriver;
