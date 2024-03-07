@@ -73,20 +73,7 @@ impl EncoderDevices for Devices {
                 .zip(last_click_times.iter_mut())
             {
                 if device.behavior == Behavior::ReversableSlider {
-                    if reverse_pin.is_high() {
-                        if last_click_time.is_none() {
-                            *last_click_time = Some(Instant::now());
-                        } else {
-                            let current_time = Instant::now();
-                            if current_time.duration_since(last_click_time.unwrap())
-                                > Duration::from_millis(delay_ms.into())
-                            {
-                                device.reversed = !device.reversed;
-                            }
-                        }
-                    } else if last_click_time.is_some() {
-                        *last_click_time = None;
-                    }
+                    update_reversable_device(device, last_click_time, reverse_pin, delay_ms);
                     update_device_from_encoder(
                         device,
                         encoder,
@@ -99,6 +86,28 @@ impl EncoderDevices for Devices {
         }
 
         Delay::delay_ms(&delay, delay_ms);
+    }
+}
+
+fn update_reversable_device(
+    device: &mut Device,
+    last_click_time: &mut Option<Instant>,
+    reverse_pin: &mut PinDriver<'static, AnyInputPin, Input>,
+    delay_ms: u32,
+) {
+    if reverse_pin.is_high() {
+        if last_click_time.is_none() {
+            *last_click_time = Some(Instant::now());
+        } else {
+            let current_time = Instant::now();
+            if current_time.duration_since(last_click_time.unwrap())
+                > Duration::from_millis(delay_ms.into())
+            {
+                device.reversed = !device.reversed;
+            }
+        }
+    } else if last_click_time.is_some() {
+        *last_click_time = None;
     }
 }
 
