@@ -6,11 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-log = { version = "0.4", default-features = false }
-esp-idf-sys = { version = "0.34", default-features = false }
-esp-idf-hal = { version = "0.43", default-features = false }
-esp-idf-svc = { version = "0.48", default-features = false }
-embedded-svc = { version = "0.27", default-features = false }
+log = { version = "0.4.21", default-features = false }
+esp-idf-sys = { version = "0.34.1", default-features = false }
+esp-idf-hal = { version = "0.43.1", default-features = false }
+esp-idf-svc = { version = "0.48.1", default-features = false }
+embedded-svc = { version = "0.27.1", default-features = false }
 device = { git = "https://github.com/vancolleague/device.git" }
 #device = { path = "../device" }
 heapless = "0.8.0"
