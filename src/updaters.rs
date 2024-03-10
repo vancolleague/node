@@ -45,6 +45,7 @@ impl EncoderDevices for Devices {
                     );
                 }
             }
+            delay.delay_ms(delay_ms);
         }
     }
 
@@ -73,7 +74,12 @@ impl EncoderDevices for Devices {
                 .zip(last_click_times.iter_mut())
             {
                 if device.behavior == Behavior::ReversableSlider {
-                    update_reversable_device(device, last_click_time, reverse_pin, delay_ms);
+                    update_reversable_device_from_pin_click(
+                        device,
+                        last_click_time,
+                        reverse_pin,
+                        delay_ms,
+                    );
                     update_device_from_encoder(
                         device,
                         encoder,
@@ -89,7 +95,13 @@ impl EncoderDevices for Devices {
     }
 }
 
-fn update_reversable_device(
+/// Update a device's status
+///
+/// Updates the software device's status status based in inputs (hardware
+/// inputs or )
+/// Doesn't update the hardware's stuats or define what should be done
+/// in order to do so
+fn update_reversable_device_from_pin_click(
     device: &mut Device,
     last_click_time: &mut Option<Instant>,
     reverse_pin: &mut PinDriver<'static, AnyInputPin, Input>,
@@ -103,7 +115,7 @@ fn update_reversable_device(
             if current_time.duration_since(last_click_time.unwrap())
                 > Duration::from_millis(delay_ms.into())
             {
-                device.reversed = !device.reversed;
+                let _ = device.take_action(Action::Reverse);
             }
         }
     } else if last_click_time.is_some() {
