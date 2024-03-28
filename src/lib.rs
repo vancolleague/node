@@ -70,11 +70,14 @@ impl Node {
             password: heapless::String::try_from(self.password.as_str()).unwrap(),
             ..Default::default()
         }))?;
-        wifi_driver.start()?;
-        wifi_driver.connect()?;
+        wifi_driver.start().unwrap();
+        wifi_driver.connect().unwrap();
         while !wifi_driver.is_connected().unwrap() {
+            //dbg!(wifi_driver.is_connected());
             let config = wifi_driver.get_configuration().unwrap();
-            println!("Waiting for station {:?}", config);
+            //println!("Waiting for station {:?}", config);
+            //dbg!(wifi_driver.is_connected());
+            sleep(Duration::new(10, 0)); // this is time in seconds
         }
         println!("Should be connected now");
 
@@ -90,6 +93,7 @@ impl Node {
             Ok(())
         })
         .unwrap();*/
+        dbg!("****************************** about to start server");
         let devices_clone = devices.clone();
         server
             .fn_handler("/status", Method::Get, move |request| {
@@ -226,14 +230,38 @@ impl Node {
             })
             .unwrap();
 
+        let mut count = 0;
         loop {
-            println!(
-                "IP info: {:?}",
-                wifi_driver.sta_netif().get_ip_info().unwrap()
-            );
-            sleep(Duration::new(100, 0));
+            if count % 100 == 0 {
+                println!(
+                    "IP info: {:?}",
+                    wifi_driver.sta_netif().get_ip_info().unwrap()
+                );
+            }
+            count = count + 1;
+            match wifi_driver.is_connected() {
+                Ok(connected) => {
+                    if !connected {
+                        wifi_driver.disconnect().unwrap();
+                        wifi_driver.connect().unwrap();
+                        let mut count = 0;
+                        while !wifi_driver.is_connected().unwrap() && count < 10 {
+                            count = count + 1;
+                            println!("Trying to connect... {}", count);
+                            let config = wifi_driver.get_configuration().unwrap();
+                            sleep(Duration::new(1, 0));
+                        }
+                    } else {
+                        println!("Connected!");
+                    }
+                }
+                Err(_) => {
+                    println!("is_connected error!!!");
+                }
+            }
+            sleep(Duration::new(10, 0));
         }
-        Ok(())
+        //Ok(())
     }
 }
 
@@ -293,7 +321,7 @@ impl DevicesDutyCycles for Devices {
                     .zip(max_duty_cycles.iter())
                 {
                     if device.needs_hardware_duty_cycle_update() {
-                        println!("Updating: {:?}", device);
+                        //println!("Updating: {:?}", device);
                         let duty_cycle = device.get_and_update_duty_cycle(max_duty);
                         let _ = driver.set_duty(duty_cycle);
                     }
