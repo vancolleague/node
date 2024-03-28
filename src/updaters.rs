@@ -120,7 +120,6 @@ fn update_reversable_device_from_pin_click(
                 > Duration::from_millis(delay_ms.into())
             {
                 let _ = device.take_action(Action::Reverse);
-                //dbg!(&device);
             }
         }
     } else if last_click_time.is_some() {
